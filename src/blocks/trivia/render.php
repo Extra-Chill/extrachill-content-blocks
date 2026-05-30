@@ -37,11 +37,16 @@ if ( empty( $question ) || empty( array_filter( $options ) ) ) {
 	return;
 }
 
+// The React view renders question and justification via dangerouslySetInnerHTML
+// to preserve the basic inline HTML the original template allowed, so sanitize
+// them here with wp_kses_post (matching the original render-time sanitization)
+// before they enter the JSON island. Options render as React text nodes and are
+// escaped by React, so they pass through as-is.
 $config = array(
-	'question'            => $question,
+	'question'            => wp_kses_post( $question ),
 	'options'            => array_values( (array) $options ),
 	'correctAnswer'      => $correct_answer,
-	'answerJustification' => $answer_justification,
+	'answerJustification' => wp_kses_post( $answer_justification ),
 	'blockId'            => $block_id,
 	'resultMessages'     => $result_messages,
 	'scoreRanges'        => $score_ranges,
