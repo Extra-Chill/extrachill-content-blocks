@@ -43,7 +43,9 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 	const [ numberOfWords, setNumberOfWords ] = useState( 2 );
 	const [ firstThe, setFirstThe ] = useState( false );
 	const [ andThe, setAndThe ] = useState( false );
-	const [ generatedName, setGeneratedName ] = useState< string | null >( null );
+	const [ generatedName, setGeneratedName ] = useState< string | null >(
+		null
+	);
 	const [ isGenerating, setIsGenerating ] = useState( false );
 	const [ message, setMessage ] = useState< MessageState | null >( null );
 
@@ -63,7 +65,9 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 		}
 		setMessage( { text, type, visible: true } );
 		hideTimer.current = setTimeout( () => {
-			setMessage( ( prev ) => ( prev ? { ...prev, visible: false } : prev ) );
+			setMessage( ( prev ) =>
+				prev ? { ...prev, visible: false } : prev
+			);
 		}, 3500 );
 	};
 
@@ -98,7 +102,8 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 			const messageText =
 				error instanceof Error
 					? error.message
-					: ( error as { message?: string } )?.message || 'An error occurred';
+					: ( error as { message?: string } )?.message ||
+					  'An error occurred';
 			showMessage( messageText, 'error' );
 		} finally {
 			setIsGenerating( false );
@@ -162,25 +167,29 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 					</select>
 				</div>
 				<div className="form-group">
-					<label>
+					<label htmlFor="first-the">
 						<input
 							type="checkbox"
+							id="first-the"
 							name="first-the"
 							checked={ firstThe }
-							onChange={ ( e ) => setFirstThe( e.target.checked ) }
+							onChange={ ( e ) =>
+								setFirstThe( e.target.checked )
+							}
 						/>
-						Add "The" at the beginning
+						Add &ldquo;The&rdquo; at the beginning
 					</label>
 				</div>
 				<div className="form-group">
-					<label>
+					<label htmlFor="and-the">
 						<input
 							type="checkbox"
+							id="and-the"
 							name="and-the"
 							checked={ andThe }
 							onChange={ ( e ) => setAndThe( e.target.checked ) }
 						/>
-						Add "&amp; The" in the middle
+						Add &ldquo;&amp; The&rdquo; in the middle
 					</label>
 				</div>
 				<button
@@ -192,10 +201,7 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 				</button>
 			</form>
 			{ message && (
-				<div
-					className={ messageClass }
-					style={ { display: 'block' } }
-				>
+				<div className={ messageClass } style={ { display: 'block' } }>
 					{ message.text }
 				</div>
 			) }
@@ -217,7 +223,9 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 
 function init(): void {
 	document
-		.querySelectorAll< HTMLElement >( '.extrachill-blocks-band-name-generator' )
+		.querySelectorAll< HTMLElement >(
+			'.extrachill-blocks-band-name-generator'
+		)
 		.forEach( ( container ) => {
 			if ( container.dataset.initialized === '1' ) {
 				return;
@@ -234,7 +242,10 @@ function init(): void {
 			);
 			if ( configEl?.textContent ) {
 				try {
-					config = { ...config, ...JSON.parse( configEl.textContent ) };
+					config = {
+						...config,
+						...JSON.parse( configEl.textContent ),
+					};
 				} catch {
 					// Fall back to defaults on malformed config.
 				}

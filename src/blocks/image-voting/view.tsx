@@ -10,7 +10,7 @@
  * preserving the original "highest votes first" behavior.
  */
 
-import { createRoot, useState } from '@wordpress/element';
+import { createRoot, useState, useEffect, useRef } from '@wordpress/element';
 import apiFetch from '@wordpress/api-fetch';
 
 const STORAGE_KEY = 'extrachill_voter_email';
@@ -59,7 +59,9 @@ function isValidEmail( email: string ): boolean {
 
 function ImageVoting( config: ImageVotingConfig ) {
 	const savedEmail = getSavedEmail();
-	const initiallyVoted = Boolean( savedEmail && config.voters.includes( savedEmail ) );
+	const initiallyVoted = Boolean(
+		savedEmail && config.voters.includes( savedEmail )
+	);
 
 	const [ voteCount, setVoteCount ] = useState( config.voteCount );
 	const [ hasVoted, setHasVoted ] = useState( initiallyVoted );
@@ -68,10 +70,22 @@ function ImageVoting( config: ImageVotingConfig ) {
 	const [ isVoting, setIsVoting ] = useState( false );
 	const [ message, setMessage ] = useState< MessageState | null >( null );
 
+	const emailInputRef = useRef< HTMLInputElement | null >( null );
+
+	// Focus the email input when the form is revealed, mirroring the original
+	// emailInput.focus() behavior without the discouraged autoFocus prop.
+	useEffect( () => {
+		if ( showForm && emailInputRef.current ) {
+			emailInputRef.current.focus();
+		}
+	}, [ showForm ] );
+
 	const flashMessage = ( text: string, type: MessageType ) => {
 		setMessage( { text, type, visible: true } );
 		setTimeout( () => {
-			setMessage( ( prev ) => ( prev ? { ...prev, visible: false } : prev ) );
+			setMessage( ( prev ) =>
+				prev ? { ...prev, visible: false } : prev
+			);
 		}, 3500 );
 	};
 
@@ -143,6 +157,13 @@ function ImageVoting( config: ImageVotingConfig ) {
 		? 'extrachill-blocks-image-voting-button button-2 button-large'
 		: 'extrachill-blocks-image-voting-button button-1 button-large';
 
+	let voteButtonLabel = 'Vote';
+	if ( hasVoted ) {
+		voteButtonLabel = 'Voted ✓';
+	} else if ( isVoting ) {
+		voteButtonLabel = 'Voting...';
+	}
+
 	return (
 		<>
 			{ config.mediaUrl && (
@@ -154,7 +175,8 @@ function ImageVoting( config: ImageVotingConfig ) {
 					/>
 					<div className="extrachill-blocks-overlay-badges">
 						<span className="extrachill-blocks-vote-badge">
-							Votes: <span className="vote-number">{ voteCount }</span>
+							Votes:{ ' ' }
+							<span className="vote-number">{ voteCount }</span>
 						</span>
 						<h2 className="extrachill-blocks-title-badge">
 							{ config.title }
@@ -171,7 +193,7 @@ function ImageVoting( config: ImageVotingConfig ) {
 							disabled={ hasVoted || isVoting }
 							onClick={ handleVoteClick }
 						>
-							{ hasVoted ? 'Voted ✓' : isVoting ? 'Voting...' : 'Vote' }
+							{ voteButtonLabel }
 						</button>
 						{ showForm && ! hasVoted && (
 							<div
@@ -179,12 +201,14 @@ function ImageVoting( config: ImageVotingConfig ) {
 								style={ { display: 'block' } }
 							>
 								<input
+									ref={ emailInputRef }
 									type="email"
 									className="extrachill-blocks-email-input"
 									placeholder="Enter your email to vote"
 									value={ email }
-									autoFocus
-									onChange={ ( e ) => setEmail( e.target.value ) }
+									onChange={ ( e ) =>
+										setEmail( e.target.value )
+									}
 									onKeyPress={ ( e ) => {
 										if ( e.key === 'Enter' ) {
 											e.preventDefault();
@@ -244,6 +268,7 @@ function parseConfig( container: HTMLElement ): ImageVotingConfig | null {
  * Reorder sibling voting blocks within each shared parent by descending vote
  * count, falling back to original document order on ties. Mirrors the original
  * vanilla behavior of surfacing the most-voted images first.
+ * @param containers
  */
 function sortBlocksByVotes( containers: HTMLElement[] ): void {
 	if ( containers.length <= 1 ) {
@@ -252,7 +277,11 @@ function sortBlocksByVotes( containers: HTMLElement[] ): void {
 
 	const byParent = new Map<
 		HTMLElement,
-		Array< { element: HTMLElement; voteCount: number; originalIndex: number } >
+		Array< {
+			element: HTMLElement;
+			voteCount: number;
+			originalIndex: number;
+		} >
 	>();
 
 	containers.forEach( ( element, index ) => {
@@ -281,7 +310,9 @@ function sortBlocksByVotes( containers: HTMLElement[] ): void {
 			}
 			return a.originalIndex - b.originalIndex;
 		} );
-		blocksData.forEach( ( data ) => parentElement.appendChild( data.element ) );
+		blocksData.forEach( ( data ) =>
+			parentElement.appendChild( data.element )
+		);
 	} );
 }
 

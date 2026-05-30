@@ -45,7 +45,9 @@ function RapperNameGenerator( { title, buttonText }: GeneratorConfig ) {
 	const [ gender, setGender ] = useState( 'non-binary' );
 	const [ style, setStyle ] = useState( 'random' );
 	const [ numberOfWords, setNumberOfWords ] = useState( 2 );
-	const [ generatedName, setGeneratedName ] = useState< string | null >( null );
+	const [ generatedName, setGeneratedName ] = useState< string | null >(
+		null
+	);
 	const [ isGenerating, setIsGenerating ] = useState( false );
 	const [ message, setMessage ] = useState< MessageState | null >( null );
 
@@ -65,7 +67,9 @@ function RapperNameGenerator( { title, buttonText }: GeneratorConfig ) {
 		}
 		setMessage( { text, type, visible: true } );
 		hideTimer.current = setTimeout( () => {
-			setMessage( ( prev ) => ( prev ? { ...prev, visible: false } : prev ) );
+			setMessage( ( prev ) =>
+				prev ? { ...prev, visible: false } : prev
+			);
 		}, 3500 );
 	};
 
@@ -99,7 +103,8 @@ function RapperNameGenerator( { title, buttonText }: GeneratorConfig ) {
 			const messageText =
 				error instanceof Error
 					? error.message
-					: ( error as { message?: string } )?.message || 'An error occurred';
+					: ( error as { message?: string } )?.message ||
+					  'An error occurred';
 			showMessage( messageText, 'error' );
 		} finally {
 			setIsGenerating( false );
@@ -185,10 +190,7 @@ function RapperNameGenerator( { title, buttonText }: GeneratorConfig ) {
 				</button>
 			</form>
 			{ message && (
-				<div
-					className={ messageClass }
-					style={ { display: 'block' } }
-				>
+				<div className={ messageClass } style={ { display: 'block' } }>
 					{ message.text }
 				</div>
 			) }
@@ -210,7 +212,9 @@ function RapperNameGenerator( { title, buttonText }: GeneratorConfig ) {
 
 function init(): void {
 	document
-		.querySelectorAll< HTMLElement >( '.extrachill-blocks-rapper-name-generator' )
+		.querySelectorAll< HTMLElement >(
+			'.extrachill-blocks-rapper-name-generator'
+		)
 		.forEach( ( container ) => {
 			if ( container.dataset.initialized === '1' ) {
 				return;
@@ -227,7 +231,10 @@ function init(): void {
 			);
 			if ( configEl?.textContent ) {
 				try {
-					config = { ...config, ...JSON.parse( configEl.textContent ) };
+					config = {
+						...config,
+						...JSON.parse( configEl.textContent ),
+					};
 				} catch {
 					// Fall back to defaults on malformed config.
 				}
