@@ -71,6 +71,10 @@ function ImageVoting( config: ImageVotingConfig ) {
 	const [ message, setMessage ] = useState< MessageState | null >( null );
 
 	const emailInputRef = useRef< HTMLInputElement | null >( null );
+	const hideTimer = useRef< ReturnType< typeof setTimeout > | null >( null );
+	const removeTimer = useRef< ReturnType< typeof setTimeout > | null >(
+		null
+	);
 
 	// Focus the email input when the form is revealed, mirroring the original
 	// emailInput.focus() behavior without the discouraged autoFocus prop.
@@ -80,12 +84,35 @@ function ImageVoting( config: ImageVotingConfig ) {
 		}
 	}, [ showForm ] );
 
+	useEffect( () => {
+		return () => {
+			if ( hideTimer.current ) {
+				clearTimeout( hideTimer.current );
+			}
+			if ( removeTimer.current ) {
+				clearTimeout( removeTimer.current );
+			}
+		};
+	}, [] );
+
 	const flashMessage = ( text: string, type: MessageType ) => {
+		if ( hideTimer.current ) {
+			clearTimeout( hideTimer.current );
+		}
+		if ( removeTimer.current ) {
+			clearTimeout( removeTimer.current );
+		}
 		setMessage( { text, type, visible: true } );
-		setTimeout( () => {
+		// After the visible window, play the fade-out, then unmount the message
+		// entirely (matching the original display:none) so it does not snap back
+		// to full opacity when the fadeOut animation ends.
+		hideTimer.current = setTimeout( () => {
 			setMessage( ( prev ) =>
 				prev ? { ...prev, visible: false } : prev
 			);
+			removeTimer.current = setTimeout( () => {
+				setMessage( null );
+			}, 400 );
 		}, 3500 );
 	};
 
