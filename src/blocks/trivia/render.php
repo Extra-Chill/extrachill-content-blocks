@@ -2,10 +2,14 @@
 /**
  * Trivia block render template.
  *
- * Emits an empty mount root plus a minimal JSON-island config. The React view
- * (view.tsx) collects every trivia block on the page into a single quiz,
- * renders the questions and the shared score display, and owns all interaction
- * state. No server-rendered markup is hydrated by reading data-* attributes.
+ * Each block renders its own `.trivia-block` wrapper in place (preserving the
+ * editor's anchor id, custom classes, and DOM position) and emits a minimal
+ * JSON-island config inside it. The React view (view.tsx) mounts every block
+ * in place and shares a single running score across all blocks on the page via
+ * a small store, injecting the score display at the same positions the prior
+ * vanilla implementation used (before the first block / after the last block).
+ * No server-rendered interactive markup is hydrated by reading data-*
+ * attributes.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -41,13 +45,11 @@ $config = array(
 	'blockId'            => $block_id,
 	'resultMessages'     => $result_messages,
 	'scoreRanges'        => $score_ranges,
-	'anchor'             => isset( $attributes['anchor'] ) ? $attributes['anchor'] : '',
-	'className'          => isset( $attributes['className'] ) ? $attributes['className'] : '',
 );
 
 $wrapper_attributes = get_block_wrapper_attributes(
 	array(
-		'class' => 'extrachill-blocks-trivia-mount',
+		'class' => 'trivia-block',
 	)
 );
 ?>
