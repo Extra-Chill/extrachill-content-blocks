@@ -75,6 +75,7 @@ function ImageVoting( config: ImageVotingConfig ) {
 	const removeTimer = useRef< ReturnType< typeof setTimeout > | null >(
 		null
 	);
+	const isVotingRef = useRef( false );
 
 	// Focus the email input when the form is revealed, mirroring the original
 	// emailInput.focus() behavior without the discouraged autoFocus prop.
@@ -117,6 +118,15 @@ function ImageVoting( config: ImageVotingConfig ) {
 	};
 
 	const submitVote = async ( voterEmail: string ) => {
+		// Synchronous re-entry guard. setIsVoting only disables the buttons on
+		// the next render, so two rapid triggers (double click, or Enter plus
+		// click) could both fire a request before the disabled state applies.
+		// The original toggled button.disabled synchronously; mirror that with
+		// a ref so only the first call proceeds.
+		if ( isVotingRef.current ) {
+			return;
+		}
+		isVotingRef.current = true;
 		setIsVoting( true );
 
 		try {
@@ -148,6 +158,7 @@ function ImageVoting( config: ImageVotingConfig ) {
 				flashMessage( messageText, 'error' );
 			}
 		} finally {
+			isVotingRef.current = false;
 			setIsVoting( false );
 		}
 	};

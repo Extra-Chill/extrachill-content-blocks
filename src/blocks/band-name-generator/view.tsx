@@ -53,6 +53,7 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 	const removeTimer = useRef< ReturnType< typeof setTimeout > | null >(
 		null
 	);
+	const isGeneratingRef = useRef( false );
 
 	useEffect( () => {
 		return () => {
@@ -95,6 +96,13 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 			return;
 		}
 
+		// Synchronous re-entry guard so a rapid second submit (Enter plus
+		// click) cannot fire a duplicate request before the disabled state
+		// applies, matching the original's synchronous button.disabled.
+		if ( isGeneratingRef.current ) {
+			return;
+		}
+		isGeneratingRef.current = true;
 		setIsGenerating( true );
 
 		try {
@@ -121,6 +129,7 @@ function BandNameGenerator( { title, buttonText }: GeneratorConfig ) {
 					  'An error occurred';
 			showMessage( messageText, 'error' );
 		} finally {
+			isGeneratingRef.current = false;
 			setIsGenerating( false );
 		}
 	};
