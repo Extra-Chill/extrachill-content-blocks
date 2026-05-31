@@ -12,7 +12,13 @@
  * Trivia is fully client-side: no network requests, no AJAX.
  */
 
-import { createRoot, useSyncExternalStore, useMemo } from '@wordpress/element';
+import {
+	createRoot,
+	useSyncExternalStore,
+	useMemo,
+	useState,
+	useEffect,
+} from '@wordpress/element';
 
 interface ResultMessages {
 	excellent: string;
@@ -145,6 +151,21 @@ function QuestionBlock( { store, question }: QuestionBlockProps ) {
 		answerJustification && answerJustification.trim() !== ''
 	);
 
+	// Gate the justification's `is-visible` class so it is applied one tick
+	// after the element mounts. The element starts at opacity:0 / translateY,
+	// and the CSS transition only plays if `is-visible` is added after paint —
+	// matching the original's deferred reveal (which set display first, then
+	// added is-visible on a timer). Applying both at once would skip the fade.
+	const [ justificationVisible, setJustificationVisible ] = useState( false );
+	useEffect( () => {
+		if ( ! ( answered && hasJustification ) ) {
+			setJustificationVisible( false );
+			return;
+		}
+		const timer = setTimeout( () => setJustificationVisible( true ), 300 );
+		return () => clearTimeout( timer );
+	}, [ answered, hasJustification ] );
+
 	const validOptions = options
 		.map( ( option, index ) => ( { option, index } ) )
 		.filter( ( entry ) => entry.option !== '' );
@@ -200,7 +221,9 @@ function QuestionBlock( { store, question }: QuestionBlockProps ) {
 			) }
 			{ hasJustification && answered && (
 				<div
-					className="trivia-block__justification is-visible"
+					className={ `trivia-block__justification${
+						justificationVisible ? ' is-visible' : ''
+					}` }
 					style={ { display: 'block' } }
 				>
 					<div
