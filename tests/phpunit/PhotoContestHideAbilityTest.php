@@ -60,6 +60,21 @@ class PhotoContestHideAbilityTest extends TestCase {
 		return array( $post_id, (int) $result['entry']['id'] );
 	}
 
+	/**
+	 * Core's Abilities REST runner requires DELETE for destructive+idempotent
+	 * abilities. The front-end moderator controls POST to the hide ability, so
+	 * it must stay non-destructive (hiding is reversible).
+	 */
+	public function test_hide_ability_annotations_route_to_post() {
+		$ability = wp_get_ability( 'extrachill/photo-contest-hide' );
+		$props   = ( new ReflectionProperty( $ability, 'props' ) );
+		$props->setAccessible( true );
+		$annotations = $props->getValue( $ability )['meta']['annotations'];
+
+		$this->assertFalse( $annotations['readonly'] );
+		$this->assertFalse( $annotations['destructive'], 'Hide is reversible; destructive would force DELETE in the core runner.' );
+	}
+
 	public function test_anonymous_execution_is_rejected_by_the_permission_check() {
 		list( , $entry_id ) = $this->createContestWithEntry();
 
