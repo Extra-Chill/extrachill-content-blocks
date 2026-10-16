@@ -11,8 +11,12 @@ declare(strict_types=1);
  * newsletter subscribe).
  *
  * Public transport: POST /extrachill/v1/content-blocks/photo-contest/vote in
- * extrachill-api (mirrors the image-voting vote route). The generic Abilities
- * REST endpoint requires authentication, same as extrachill/image-voting-vote.
+ * extrachill-api (mirrors the image-voting vote route). Voters are anonymous
+ * (QR code / shared link, identified by email only), so the permission
+ * callback is public — the email-gated dedup and close-date checks inside
+ * process_vote remain the authority. Abuse protection is a per-IP transient
+ * rate limit on the optional route-supplied `ip` input; the route passes
+ * REMOTE_ADDR through.
  *
  * @package ExtraChillContentBlocks
  * @since   1.4.0
@@ -56,6 +60,10 @@ function extrachill_content_blocks_register_photo_contest_vote_ability(): void {
 						'format'      => 'email',
 						'description' => __( 'Voter email address (dedup key and newsletter opt-in).', 'extrachill-content-blocks' ),
 					),
+					'ip'            => array(
+						'type'        => 'string',
+						'description' => __( 'Client IP for rate limiting (route-supplied).', 'extrachill-content-blocks' ),
+					),
 				),
 				'required'   => array( 'post_id', 'contest_id', 'entry_id', 'email_address' ),
 			),
@@ -72,7 +80,7 @@ function extrachill_content_blocks_register_photo_contest_vote_ability(): void {
 					),
 				),
 			),
-			'permission_callback' => 'is_user_logged_in',
+			'permission_callback' => '__return_true',
 			'execute_callback'    => 'extrachill_content_blocks_photo_contest_vote_ability_execute',
 			'meta'                => array(
 				'show_in_rest' => true,
@@ -97,6 +105,7 @@ function extrachill_content_blocks_photo_contest_vote_ability_execute( array $in
 	$contest_id = isset( $input['contest_id'] ) ? sanitize_text_field( (string) $input['contest_id'] ) : '';
 	$entry_id   = isset( $input['entry_id'] ) ? absint( $input['entry_id'] ) : 0;
 	$email      = isset( $input['email_address'] ) ? sanitize_email( (string) $input['email_address'] ) : '';
+	$ip         = isset( $input['ip'] ) ? sanitize_text_field( (string) $input['ip'] ) : '';
 
 	if ( 0 === $post_id ) {
 		return new \WP_Error(
@@ -123,6 +132,14 @@ function extrachill_content_blocks_photo_contest_vote_ability_execute( array $in
 		return new \WP_Error(
 			'invalid_email',
 			__( 'A valid email address is required.', 'extrachill-content-blocks' )
+		);
+	}
+
+	if ( function_exists( 'extrachill_content_blocks_photo_contest_vote_rate_limit_ok' )
+		&& ! extrachill_content_blocks_photo_contest_vote_rate_limit_ok( $ip ) ) {
+		return new \WP_Error(
+			'rate_limited',
+			__( 'Too many votes — please wait a few minutes and try again.', 'extrachill-content-blocks' )
 		);
 	}
 

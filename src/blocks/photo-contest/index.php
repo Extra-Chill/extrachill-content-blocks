@@ -67,6 +67,14 @@ if ( ! defined( 'EXTRACHILL_PHOTO_CONTEST_RATE_WINDOW' ) ) {
 }
 
 /**
+ * Votes allowed per IP inside the rate-limit window. Deliberately generous:
+ * a whole party may share venue wifi behind one IP.
+ */
+if ( ! defined( 'EXTRACHILL_PHOTO_CONTEST_VOTE_RATE_LIMIT' ) ) {
+	define( 'EXTRACHILL_PHOTO_CONTEST_VOTE_RATE_LIMIT', 60 );
+}
+
+/**
  * Image MIME types accepted for entry photos.
  *
  * @return array<string, string> ext-pattern => mime map (wp_handle_upload shape).
@@ -531,6 +539,35 @@ function extrachill_content_blocks_photo_contest_rate_limit_ok( $ip ) {
 	$count = (int) get_transient( $key );
 
 	if ( $count >= EXTRACHILL_PHOTO_CONTEST_RATE_LIMIT ) {
+		return false;
+	}
+
+	set_transient( $key, $count + 1, EXTRACHILL_PHOTO_CONTEST_RATE_WINDOW );
+
+	return true;
+}
+
+/**
+ * Transient-based vote rate limit per IP.
+ *
+ * Parallel to the submission limiter above but with its own transient bucket
+ * and a much higher ceiling, since legitimate voters cluster behind shared
+ * venue wifi. Email dedup (one vote per email per entry) remains the primary
+ * control; this only caps bulk abuse.
+ *
+ * @param string $ip Client IP ('' skips the check — e.g. CLI).
+ * @return bool True when the vote may proceed.
+ */
+function extrachill_content_blocks_photo_contest_vote_rate_limit_ok( $ip ) {
+	$ip = trim( (string) $ip );
+	if ( '' === $ip ) {
+		return true;
+	}
+
+	$key   = 'ec_photo_contest_vote_' . md5( $ip );
+	$count = (int) get_transient( $key );
+
+	if ( $count >= EXTRACHILL_PHOTO_CONTEST_VOTE_RATE_LIMIT ) {
 		return false;
 	}
 

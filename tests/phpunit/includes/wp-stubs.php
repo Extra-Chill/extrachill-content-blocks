@@ -26,6 +26,7 @@ function wp_stubs_reset(): void {
 	$GLOBALS['wp_test_comments']     = array();
 	$GLOBALS['wp_test_comment_meta'] = array();
 	$GLOBALS['wp_test_transients']   = array();
+	$GLOBALS['wp_test_abilities']    = array();
 	$GLOBALS['wp_test_next_id']      = 1000;
 }
 
@@ -53,6 +54,56 @@ function wp_stubs_insert_post( array $data ): int {
 	);
 
 	return $id;
+}
+
+// ─── Abilities API ──────────────────────────────────────────────────────────
+
+/**
+ * Minimal WP_Ability double. Mirrors the one behavior under test: execute()
+ * enforces the registered permission_callback before the execute_callback
+ * runs, exactly as WP_Ability::execute() does in core.
+ */
+if ( ! class_exists( 'WP_Ability' ) ) {
+	class WP_Ability {
+		private string $name;
+		private array $props;
+
+		public function __construct( string $name, array $props ) {
+			$this->name  = $name;
+			$this->props = $props;
+		}
+
+		public function get_name(): string {
+			return $this->name;
+		}
+
+		public function has_permission( $input = array() ): bool {
+			return (bool) call_user_func( $this->props['permission_callback'], $input );
+		}
+
+		public function execute( $input = array() ) {
+			if ( ! $this->has_permission( $input ) ) {
+				return new WP_Error(
+					'ability_invalid_permissions',
+					'You do not have permission to execute this ability.'
+				);
+			}
+
+			return call_user_func( $this->props['execute_callback'], $input );
+		}
+	}
+}
+
+function wp_register_ability( $name, array $props ) {
+	$ability = new WP_Ability( (string) $name, $props );
+
+	$GLOBALS['wp_test_abilities'][ (string) $name ] = $ability;
+
+	return $ability;
+}
+
+function wp_get_ability( $name ) {
+	return $GLOBALS['wp_test_abilities'][ (string) $name ] ?? null;
 }
 
 // ─── Hooks (no-op collectors) ────────────────────────────────────────────────
@@ -262,6 +313,21 @@ function is_email( $value ) {
 
 function absint( $value ) {
 	return abs( (int) $value );
+}
+
+function __( $text, $domain = 'default' ) {
+	return $text;
+}
+
+function __return_true() {
+	return true;
+}
+
+/**
+ * Tests model the anonymous contest voter: nobody is ever logged in.
+ */
+function is_user_logged_in() {
+	return false;
 }
 
 function wp_check_filetype( $filename, $mimes = null ) {
