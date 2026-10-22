@@ -92,6 +92,7 @@ function extrachill_content_blocks_load_abilities() {
 		'/photo-contest-list.php',
 		'/photo-contest-vote.php',
 		'/photo-contest-hide.php',
+		'/photo-contest-set-phase.php',
 		'/photo-contest-top.php',
 		'/trivia-create.php',
 		'/trivia-list.php',
