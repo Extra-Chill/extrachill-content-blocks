@@ -6,6 +6,7 @@
   "license": "GPL-2.0-or-later",
   "main": "extrachill-content-blocks.php",
   "scripts": {
+    "prepare": "npm run build",
     "build": "wp-scripts build --webpack-copy-php",
     "prepare": "npm run build",
     "start": "wp-scripts start",
